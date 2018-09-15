@@ -18,54 +18,68 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private RecyclerView mRecycledView;
-    private ProdutosDados dados;
-    ProdutosAdapter mAdapter;
+    private ProductsData data;
+    private int page = 1;
+    private boolean increment = true;
+    private ProdutosAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        dados = new ProdutosDados();
+        // Inicializar os dados dos produtos
+        data = new ProductsData();
+        data.setQtdeItemPage(30);
 
+        // Instanciar Recyclerview
         this.mRecycledView = findViewById(R.id.recycled_produtos);
 
-        // Preencher Recyclerview de Produtos
-        this.mAdapter = new ProdutosAdapter(getApplicationContext(), dados.getListProdutos());
+        // Inicializar Adapter com uma lista de produtos
+        this.mAdapter = new ProdutosAdapter(getApplicationContext(), data.getListPage(page++));
         this.mRecycledView.setAdapter(this.mAdapter);
 
         LinearLayoutManager llm = new LinearLayoutManager(getApplicationContext());
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         mRecycledView.setLayoutManager(llm);
 
+        // Monitorar a se os ultimos itens do Recycled estao sendo exibidos
         mRecycledView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                LinearLayoutManager layoutManager = LinearLayoutManager.class.cast(recyclerView.getLayoutManager());
-                int totalItemCount = layoutManager.getItemCount();
-                int lastVisible = layoutManager.findLastVisibleItemPosition();
+                if(increment) {
+                    LinearLayoutManager layoutManager = LinearLayoutManager.class.cast(recyclerView.getLayoutManager());
+                    int totalItemCount = layoutManager.getItemCount();
+                    int lastVisible = layoutManager.findLastVisibleItemPosition();
 
-                boolean endHasBeenReached = lastVisible + 5 >= totalItemCount;
-                if (totalItemCount > 0 && endHasBeenReached) {
-                    mAdapter.incrementRecyclerView();
-                    toast("Incrementou");
+                    boolean endHasBeenReached = lastVisible + 5 >= totalItemCount;
+                    if (totalItemCount > 0 && endHasBeenReached) {
+                        mAdapter.incrementRecycledView();
+                        toast("Incrementou");
+                    }
                 }
             }
         });
 
     }
 
+    /**
+     * Exibir mensagem na interface
+     */
     private void toast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Adapter de produtos
+     */
     private class ProdutosAdapter extends RecyclerView.Adapter<ProdutosAdapter.MyViewHolder> {
-        private List<Produto> produtosList;
+        private List<Product> productsListAdapter;
         private LayoutInflater mLayoutInflater;
 
-        private ProdutosAdapter(Context c, List<Produto> produtos) {
-            mLayoutInflater = (LayoutInflater) c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            this.produtosList = produtos;
+        private ProdutosAdapter(Context c, List<Product> produtos) {
+            this.mLayoutInflater = (LayoutInflater) c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            this.productsListAdapter = produtos;
         }
 
         @Override
@@ -78,45 +92,63 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(ProdutosAdapter.MyViewHolder holder, int position) {
 
-            Produto produto = this.produtosList.get(position);
+            Product produto = this.productsListAdapter.get(position);
 
             holder.id.setText(String.valueOf(produto.getId()));
-            holder.descricaoTextView.setText(produto.getDescricao());
+            holder.descriptionTextView.setText(produto.getDescription());
         }
 
-        public void incrementRecyclerView() {
-            Log.i("Log_teste", "incremento ");
-            List<Produto> prods = dados.getListIncrement();
+        /**
+         * Incremeta itens no RecycledView
+         */
+        public void incrementRecycledView() {
+            List<Product> prods = data.getListPage(page++);
 
-            int i = getItemCount();
-            for (Produto p : prods) {
-                this.produtosList.add(p);
-                notifyItemInserted(i++);
+            if (prods != null) {
+
+                int i = getItemCount();
+                for (Product p : prods) {
+                    this.productsListAdapter.add(p);
+                    notifyItemInserted(i++);
+                }
+                if(data.getQtdeItemPage() > prods.size()){
+                    increment = false;
+                }
+            } else {
+                increment = false;
             }
-
         }
 
         @Override
         public int getItemCount() {
-            return produtosList.size();
+            return productsListAdapter.size();
         }
 
-        public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
             TextView id;
-            TextView descricaoTextView;
+            TextView descriptionTextView;
 
 
             public MyViewHolder(View itemView) {
                 super(itemView);
                 itemView.setOnClickListener(this);
-                this.id = itemView.findViewById(R.id.text_id_produto);
-                this.descricaoTextView = itemView.findViewById(R.id.text_descricao_produto);
+                itemView.setOnLongClickListener(this);
+
+                this.id = itemView.findViewById(R.id.text_id_product);
+                this.descriptionTextView = itemView.findViewById(R.id.text_description_product);
             }
 
             @Override
             public void onClick(View view) {
-                toast("posição " + getAdapterPosition());
-                Log.i("RecycledView Log", "posição " + getAdapterPosition());
+                toast("onClick posição " + getAdapterPosition());
+                Log.i("RecycledView Log", "onClick posição " + getAdapterPosition());
+            }
+
+            @Override
+            public boolean onLongClick(View v) {
+                toast("onLongClick posição " + getAdapterPosition());
+                Log.i("RecycledView Log", "onLongClick posição " + getAdapterPosition());
+                return true;
             }
         }
     }

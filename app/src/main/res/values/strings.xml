@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ManipulandoRecycledView</string>
+    <string name="app_name">Lista de Produtos</string>
     <string name="zero">0</string>
-    <string name="descricao">Descrição</string>
+    <string name="description">Descrição</string>
 </resources>
